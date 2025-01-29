@@ -52,6 +52,7 @@ public final class Message implements Serializable {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
+    @Builder.Default  
     @Column(nullable = false)
     private boolean deleted = false;
 

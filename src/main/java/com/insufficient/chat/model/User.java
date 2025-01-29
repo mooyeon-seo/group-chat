@@ -52,14 +52,15 @@ public class User {
     private String password;
 
     private String avatar;
-
+    
+    @Builder.Default  
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserStatus status = UserStatus.OFFLINE;
 
+    @Builder.Default  
     @ManyToMany(mappedBy = "members")
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     private Set<Group> groups = new HashSet<>();
 
     @CreatedDate
