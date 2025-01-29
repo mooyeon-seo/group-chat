@@ -18,13 +18,14 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "groups", indexes = {
-    @Index(name = "idx_group_name", columnList = "name"),
-    @Index(name = "idx_group_creator", columnList = "creator_id")
+        @Index(name = "idx_group_name", columnList = "name"),
+        @Index(name = "idx_group_creator", columnList = "creator_id")
 })
 @EntityListeners(AuditingEntityListener.class)
 public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @EqualsAndHashCode.Include
     private String id;
 
     @Column(nullable = false)
