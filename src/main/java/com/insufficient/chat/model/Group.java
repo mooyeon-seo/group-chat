@@ -8,11 +8,20 @@ import java.util.Set;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-@Data
+@Getter
+@Setter
+@ToString
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @NoArgsConstructor
-@Table(name = "groups")
+@AllArgsConstructor
+@Table(name = "groups", indexes = {
+    @Index(name = "idx_group_name", columnList = "name"),
+    @Index(name = "idx_group_creator", columnList = "creator_id")
+})
+@EntityListeners(AuditingEntityListener.class)
 public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
