@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: chat
+  
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: chatdb
+  
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: chat-group
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+jwt:
+  secret: yourSecretKey
+  expiration: 86400000 # 24 hours in milliseconds
+
+websocket:
+  endpoint: /ws
+  destination-prefix: /app
+  topic-prefix: /topic
