@@ -2,23 +2,36 @@ server:
   port: 8080
 
 spring:
+  security:
+    user:
+      name: ${WEBSOCKET_USER:admin}
+      password: ${WEBSOCKET_PASSWORD:changeme}
+
   application:
     name: chat
-  
-  data:
-    mongodb:
-      host: localhost
-      port: 27017
-      database: chatdb
-  
-  kafka:
-    bootstrap-servers: localhost:9092
-    consumer:
-      group-id: chat-group
-      auto-offset-reset: earliest
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/chat
+    driver-class-name: org.postgresql.Driver
+    username: root 
+    password: Password!
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+
+  # kafka:
+  #   bootstrap-servers: localhost:9092
+  #   consumer:
+  #     group-id: chat-group
+  #     auto-offset-reset: earliest
+  #   producer:
+  #     key-serializer: org.apache.kafka.common.serialization.StringSerializer
+  #     value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 jwt:
   secret: yourSecretKey
@@ -28,3 +41,4 @@ websocket:
   endpoint: /ws
   destination-prefix: /app
   topic-prefix: /topic
+
