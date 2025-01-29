@@ -21,8 +21,8 @@ spring:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
+    open-in-view: false
 
   # kafka:
   #   bootstrap-servers: localhost:9092
@@ -39,6 +39,9 @@ jwt:
 
 websocket:
   endpoint: /ws
-  destination-prefix: /app
   topic-prefix: /topic
+
+logging:
+  level:
+    org.springframework.web.socket: DEBUG 
 
