@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+    <h2>Real-time Chat</h2>
+    <input type="text" id="messageInput" placeholder="Type a message">
+    <button onclick="sendMessage('group-1', 'John', document.getElementById('messageInput').value)">Send</button>
+
+    <h3>Messages:</h3>
+    <ul id="messages"></ul>
+
+    <script>
+        const socket = new SockJS('/ws');
+        const stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, () => {
+            console.log("Connected to WebSocket server.");
+
+            // Subscribe to a group chat topic (e.g., "group-1")
+            stompClient.subscribe('/topic/group/group-1', (message) => {
+                const chatMessage = JSON.parse(message.body);
+                console.log("Received:", chatMessage);
+
+                // Display message
+                const li = document.createElement("li");
+                li.textContent = `${chatMessage.sender}: ${chatMessage.content}`;
+                document.getElementById("messages").appendChild(li);
+            });
+        });
+
+        function sendMessage(groupName, sender, messageContent) {
+            const message = {
+                sender: sender,
+                content: messageContent,
+                groupName: groupName,
+                timestamp: new Date().toISOString()
+            };
+
+            stompClient.send(`/app/send/${groupName}`, {}, JSON.stringify(message));
+        }
+    </script>
+</body>
+</html>
