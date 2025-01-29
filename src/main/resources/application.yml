@@ -34,8 +34,8 @@ spring:
   #     value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 jwt:
-  secret: yourSecretKey
-  expiration: 86400000 # 24 hours in milliseconds
+  secret: ${JWT_SECRET:yourSecretKeyHereShouldBeAtLeast32CharactersLong}
+  expiration: 86400000  # 24 hours in milliseconds
 
 websocket:
   endpoint: /ws
