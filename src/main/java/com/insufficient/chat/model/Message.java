@@ -30,7 +30,7 @@ public final class Message implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @EqualsAndHashCode.Include
-    private final String id;
+    private String id;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
@@ -47,7 +47,7 @@ public final class Message implements Serializable {
 
     @CreatedDate
     @Column(updatable = false)
-    private final LocalDateTime createdAt;
+    private LocalDateTime createdAt;
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
@@ -57,5 +57,5 @@ public final class Message implements Serializable {
     private boolean deleted = false;
 
     @Version
-    private final Long version;
+    private Long version;
 }
