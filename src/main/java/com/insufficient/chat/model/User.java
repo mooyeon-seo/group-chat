@@ -51,13 +51,6 @@ public class User {
     @Size(min = 8)
     private String password;
 
-    private String avatar;
-    
-    @Builder.Default  
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserStatus status = UserStatus.OFFLINE;
-
     @Builder.Default  
     @ManyToMany(mappedBy = "members")
     @ToString.Exclude
@@ -69,8 +62,4 @@ public class User {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
-
-    public enum UserStatus {
-        ONLINE, OFFLINE, AWAY
-    }
 }
