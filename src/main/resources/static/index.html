@@ -6,44 +6,224 @@
     <title>WebSocket Chat</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        #messages {
+            list-style: none;
+            padding: 0;
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+        }
+        li {
+            padding: 5px 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .group-item {
+            cursor: pointer;
+            padding: 5px;
+            border: 1px solid #ccc;
+            margin: 5px 0;
+            background-color: #f9f9f9;
+        }
+        .group-item:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
 </head>
 <body>
     <h2>Real-time Chat</h2>
-    <input type="text" id="messageInput" placeholder="Type a message">
-    <button onclick="sendMessage('group-1', 'John', document.getElementById('messageInput').value)">Send</button>
+    <div id="connectionStatus">Connecting...</div>
+    <input type="text" id="groupInput" placeholder="Enter group name">
+    <input type="text" id="senderIdInput" placeholder="Enter your senderId ID">
+    <button id="addGroupButton">Add Group</button>
+
+    <h3>Groups:</h3>
+    <div id="groups"></div>
+
+    <h3 id="currentGroupTitle">No group selected</h3>
+    <input type="text" id="messageInput" placeholder="Type a message" disabled>
+    <button id="sendButton" disabled>Send</button>
 
     <h3>Messages:</h3>
     <ul id="messages"></ul>
 
     <script>
-        const socket = new SockJS('/ws');
-        const stompClient = Stomp.over(socket);
+        let stompClient;
+        let isConnected = false;
+        let currentGroup = '';
+        const groups = {};
+        const messagesByGroup = {};  // Ensure this is declared at the top for all functions to access
 
-        stompClient.connect({}, () => {
-            console.log("Connected to WebSocket server.");
+        // Initialize WebSocket connection
+        function connectWebSocket() {
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
 
-            // Subscribe to a group chat topic (e.g., "group-1")
-            stompClient.subscribe('/topic/group/group-1', (message) => {
-                const chatMessage = JSON.parse(message.body);
-                console.log("Received:", chatMessage);
-
-                // Display message
-                const li = document.createElement("li");
-                li.textContent = `${chatMessage.sender}: ${chatMessage.content}`;
-                document.getElementById("messages").appendChild(li);
+            stompClient.connect({}, () => {
+                console.log("Connected to WebSocket server.");
+                isConnected = true;
+                updateConnectionStatus("Connected");
+            }, (error) => {
+                console.error("Connection error:", error);
+                isConnected = false;
+                updateConnectionStatus("Disconnected");
+                setTimeout(connectWebSocket, 5000); // Retry connection after 5 seconds
             });
-        });
+        }
 
-        function sendMessage(groupName, sender, messageContent) {
+        connectWebSocket();
+
+        // Add a new group and subscribe to it
+        function addGroup() {
+            const groupId = document.getElementById('groupInput').value.trim();
+            const senderId= document.getElementById('senderIdInput').value.trim();
+
+            if (!groupId) {
+                alert("Group name cannot be empty!");
+                return;
+            }
+
+            if (!senderId) {
+                alert("sender ID cannot be empty!");
+                return;
+            }
+
+            if (!isConnected) {
+                alert("WebSocket connection not established.");
+                return;
+            }
+
+            if (groups[groupId]) {
+                alert("Already subscribed to this group.");
+                return;
+            }
+
+            groups[groupId] = senderId;
+            messagesByGroup[groupId] = [];  // Initialize message storage for the group
+            stompClient.subscribe(`/topic/group/${groupId}`, (message) => handleMessage(groupId, message));
+            addGroupToUI(groupId);
+            console.log(`Subscribed to group: ${groupId}`);
+        }
+
+        // Add group to the UI list
+        function addGroupToUI(groupId) {
+            const groupItem = document.createElement('div');
+            groupItem.textContent = groupId;
+            groupItem.className = 'group-item';
+            groupItem.dataset.group = groupId;  // Store the group name in a custom attribute
+            groupItem.addEventListener('click', () => selectGroup(groupId));
+            document.getElementById('groups').appendChild(groupItem);
+        }
+
+        // Select a group and update the UI
+        function selectGroup(groupId) {
+            currentGroup = groupId;
+            document.getElementById('currentGroupTitle').textContent = `Current Group: ${groupId}`;
+            document.getElementById('messageInput').disabled = false;
+            document.getElementById('sendButton').disabled = false;
+            clearMessages();
+
+            // Display stored messages
+            if (messagesByGroup[groupId]) {
+                messagesByGroup[groupId].forEach(displayMessage);
+            }
+
+            // Clear new message notification
+            const groupElement = document.querySelector(`.group-item[data-group='${groupId}']`);
+            if (groupElement) {
+                groupElement.style.backgroundColor = '';  // Remove highlight
+            }
+        }
+
+        // Handle incoming messages
+        function handleMessage(groupId, message) {
+            try {
+                const chatMessage = JSON.parse(message.body);
+
+                // Store the message in the corresponding group
+                if (!messagesByGroup[groupId]) {
+                    messagesByGroup[groupId] = [];
+                }
+                messagesByGroup[groupId].push(chatMessage);
+                console.log(`Message received for group ${groupId}:`, chatMessage);
+
+                // Display the message if the group is currently selected
+                if (groupId === currentGroup) {
+                    displayMessage(chatMessage);
+                } else {
+                    notifyNewMessage(groupId);
+                }
+            } catch (e) {
+                console.error("Failed to parse message:", e);
+            }
+        }
+
+        // Notify user of new messages in other groups
+        function notifyNewMessage(groupId) {
+            const groupElement = document.querySelector(`.group-item[data-group='${groupId}']`);
+            if (groupElement) {
+                groupElement.style.backgroundColor = '#ffcccb';  // Highlight group with new message
+            }
+        }
+
+        // Display message in the chat window
+        function displayMessage(chatMessage) {
+            const li = document.createElement("li");
+            li.textContent = `${chatMessage.senderId}: ${chatMessage.content}`;
+            document.getElementById("messages").appendChild(li);
+            li.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Clear messages when switching groups
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+
+        // Send a message to the server
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const messageContent = messageInput.value.trim();
+
+            if (!messageContent) {
+                alert("Message cannot be empty!");
+                return;
+            }
+
+            if (!isConnected) {
+                alert("WebSocket connection not established.");
+                return;
+            }
+
+            if (!currentGroup) {
+                alert("You need to select a group before sending messages.");
+                return;
+            }
+
+            const senderId = groups[currentGroup];
             const message = {
-                sender: sender,
+                senderId: senderId,  // Use the sender ID associated with the group
                 content: messageContent,
-                groupName: groupName,
-                timestamp: new Date().toISOString()
+                groupId: currentGroup,
             };
 
-            stompClient.send(`/app/send/${groupName}`, {}, JSON.stringify(message));
+            stompClient.send(`/app/send/${currentGroup}`, {}, JSON.stringify(message));
+            messageInput.value = '';
         }
+
+        // Update connection status on the UI
+        function updateConnectionStatus(status) {
+            document.getElementById('connectionStatus').textContent = status;
+        }
+
+        // Add event listeners
+        document.getElementById('addGroupButton').addEventListener('click', addGroup);
+        document.getElementById('sendButton').addEventListener('click', sendMessage);
+        document.getElementById('messageInput').addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        });
     </script>
 </body>
 </html>
